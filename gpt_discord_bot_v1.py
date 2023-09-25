@@ -111,15 +111,21 @@ async def on_message(message):
         contentBlob = ""
         for message in messages:
             contentBlob += message.content + "\n"
-        response = callGPT(contentBlob)
-        #await to_gpt.purge(limit=None)
-        #await to_gpt.send(contentBlob)
-
-        # represents the response from gpt
-        await typing_msg.delete()
-        print(response)
-        await thread.send(response)
-        #print(response)
+        try:
+            response = callGPT(contentBlob)
+            await typing_msg.delete()
+            if len(response) >= 1999:
+                chunks = [response[i:i+1999] for i in range(0, len(response), 1999)]
+                for chunk in chunks:
+                    await thread.send(chunk)
+            else:
+                await thread.send(response)
+        except Exception as e:
+            print(e)
+            try:
+                await thread.send(f"An error occurred: {e}")
+            except Exception as e:
+                print(e)
         return
     
    
@@ -182,7 +188,6 @@ def generateSkybox(prompt):
     requests.post("http://localhost:5000", json = jsonPayload)
     print("sent request to server")
     return
-
 
 # run the bot    
 client.run(TOKEN)
